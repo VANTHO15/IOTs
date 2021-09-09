@@ -1,0 +1,12 @@
+Group C112 "C112 Room"
+//Light Control Panel
+Switch Light1 "Light1" <light> (C112) { mqtt="<[mosquitto:/light1:state:default],>[mosquitto:/light1:command:ON:1],>[mosquitto:/light1:command:OFF:0]" }
+Switch Light2 "Light2" <light> (C112) { mqtt="<[mosquitto:/light2:state:default],>[mosquitto:/light2:command:ON:1],>[mosquitto:/light2:command:OFF:0]" }
+
+//Control Panel
+Switch Fan "Fan"  	<fan_ceiling> 	(C112) { mqtt="<[mosquitto:/fan:state:default],>[mosquitto:/fan:command:ON:1],>[mosquitto:/fan:command:OFF:0]" }
+Switch Ac "Ac"  	<player> 		(C112) { mqtt="<[mosquitto:/ac:state:default],>[mosquitto:/ac:command:ON:1],>[mosquitto:/ac:command:OFF:0]" }
+
+//Subscription Panel
+Number Temperature "Temperature [%.1f C]" 	<temperature> (C112) {mqtt="<[mosquitto:/temp:state:default]"}
+Number Human "Human [%d]" 					<parents_1_3> (C112) {mqtt="<[mosquitto:/human:state:default]"} 

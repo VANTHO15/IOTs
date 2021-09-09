@@ -1,0 +1,17 @@
+sitemap default label="TAPIT's Office"
+{
+    Frame label="Light Control Panel" {
+        Switch item=Light1
+		Switch item=Light2
+    }
+	Frame label="Fan-AC Control Panel" {
+		Switch item=Fan
+		Switch item=Ac
+	}
+ 
+    Frame label="Subscription Control Panel" {
+         Text item=Temperature
+		 Text item=Human
+     } 
+
+}
