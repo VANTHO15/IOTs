@@ -1,95 +1,61 @@
-#include <ESP8266WiFi.h>
-#include <SocketIoClient.h>
+#include <SocketIOClient.h>
 
-
-
-const char* ssid     = "Van Tho 15";
+const char* ssid = "Van Tho 15";
 const char* password = "vannhucu15";
 
 // Server Ip
-const char* server = "192.168.1.25";
+String host = "192.168.1.11";
 // Server port
-int port = 3000;
+int port = 4000;
 
-SocketIoClient socket;
+// Khởi tạo socket
+SocketIOClient socket;
 
-
-String JsonData = "";
-int nhietdo = 0;
-int doam = 0;
-int anhsang = 0;
-unsigned long last = 0;
-int trangthairelay1 = 0;
-int trangthairelay2 = 0;
-String Data = "";
-int bien1 = 0;
-int bien2 = 0;
-
-void setupNetwork()
-{
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println();
-  Serial.println("Wifi connected!");
+// Kết nối wifi
+void setupNetwork() {
+    WiFi.begin(ssid, password);
+    uint8_t i = 0;
+    while (WiFi.status() != WL_CONNECTED && i++ < 20) delay(500);
+    if (i == 21) {
+        while (1) delay(500);
+    }
+    
+    // Hàm này là hàm in log ra serial
+    Serial.println("Wifi connected!");
+}
+//    socket.emit("pir", "{\"state\":true}");
+// Thay đổi trạng thái đèn theo dữ liệu nhận được
+void changeLedState(String data) {
+       Serial.println(data);
+//    if (data == "[\"led-change\",\"off\"]") {
+//        digitalWrite(D5, HIGH);
+//        Serial.println("Led off!");
+//    } else {
+//        digitalWrite(D5, LOW);
+//        Serial.println("Led on!");
+//    }
 }
 
-void handleMessage(const char* message , size_t length)
-{
-  Serial.print("message:");
-  Serial.println(message);
-  Data = message;
-  // xử lý dữ liệu???
-}
-void setup()
-{
-  Serial.begin(9600);
-  pinMode(2, OUTPUT);
-  digitalWrite(16, HIGH);
-  setupNetwork();
-  // kết nối server nodejs
-  socket.begin(server, port);
-  // lắng nghe sự kiện server gửi
-  socket.on("message", handleMessage);
+void setup() {
 
-  last = millis();
-
-  Serial.println("ESP Start");
+    pinMode(D5, OUTPUT);
+    
+    // Cài đặt giá trị mặc định là đèn tắt
+    digitalWrite(D5, HIGH);
+    
+    // Khi bạn bật serial monitor lên để xem log thì phải set đúng tốc độ baud này.
+    Serial.begin(9600);
+    setupNetwork();
+    
+    // Lắng nghe sự kiện led-change thì sẽ thực hiện hàm changeLedState
+    socket.on("led-change", changeLedState);
+    
+    // Kết nối đến server
+    socket.connect(host, port);
+    Serial.println("Xong");
 }
 
-void loop()
-{
-  socket.loop();
-
-  if (millis() - last >= 3000)
-  {
-    chuongtrinhcambien();
-    SendDataMQTT(String(nhietdo), String(doam), String(anhsang), String(trangthairelay1));
-    last = millis();
-  }
-
-}
-
-void chuongtrinhcambien()
-{
-  nhietdo++;
-  doam = doam + 2;
-  anhsang = anhsang + 3;
-}
-
-void SendDataMQTT( String sensor1 ,  String sensor2 ,  String sensor3 , String sensor4 )
-{
-  JsonData = "";
-  JsonData = "{\"nhietdo\":\"" + String(sensor1) + "\"," +
-             "\"doam\":\"" + String(sensor2) + "\"," +
-             "\"anhsang\":\"" + String(sensor3) + "\"," +
-             "\"relay1\":\"" + String(sensor4) + "\"}";
-
-  Serial.print("JsonData:");
-  Serial.println(JsonData);
-  socket.emit("JSON", JsonData.c_str());
+void loop() {
+     // Luôn luôn giữ kết nối với server.
+    socket.monitor();
 }
