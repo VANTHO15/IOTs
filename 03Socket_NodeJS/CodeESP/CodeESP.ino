@@ -20,10 +20,9 @@ void setupNetwork() {
         while (1) delay(500);
     }
     
-    // Hàm này là hàm in log ra serial
     Serial.println("Wifi connected!");
 }
-//    socket.emit("pir", "{\"state\":true}");
+//    socket.emit("Quat", "{\"state\":true}");
 // Thay đổi trạng thái đèn theo dữ liệu nhận được
 void changeLedState(String data) {
        Serial.println(data);
@@ -39,16 +38,13 @@ void changeLedState(String data) {
 void setup() {
 
     pinMode(D5, OUTPUT);
+    digitalWrite(D5, 0);
     
-    // Cài đặt giá trị mặc định là đèn tắt
-    digitalWrite(D5, HIGH);
-    
-    // Khi bạn bật serial monitor lên để xem log thì phải set đúng tốc độ baud này.
     Serial.begin(9600);
     setupNetwork();
     
     // Lắng nghe sự kiện led-change thì sẽ thực hiện hàm changeLedState
-    socket.on("led-change", changeLedState);
+    socket.on("Led", changeLedState);
     
     // Kết nối đến server
     socket.connect(host, port);

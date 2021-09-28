@@ -1,0 +1,3 @@
+RewriteEngine On
+ErrorDocument 404 /404
+RewriteRule ^404 /template/pages/404.php [L]

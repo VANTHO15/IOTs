@@ -1,0 +1,27 @@
+
+/*# sourceMappingURL=data:application/json;charset=utf8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiY3VzdG9tLmNzcyIsInNvdXJjZXMiOlsiY3VzdG9tLnNjc3MiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IiJ9 */
+
+/*# sourceMappingURL=custom.css.map */
+
+#chart {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.gauge .background {
+    fill: #ddd;
+}
+
+.gauge .value {
+    fill: #777;
+    font-size: 1.5rem;
+}
+
+.gauge .value tspan {
+    font-size: 1rem;
+}
+
+.gauge .scale text {
+    fill: #999;
+    font-size: 0.75rem;
+}

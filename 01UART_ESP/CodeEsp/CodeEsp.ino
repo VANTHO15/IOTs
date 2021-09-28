@@ -2,16 +2,8 @@
 const byte RX = D6;
 const byte TX = D5;
 SoftwareSerial mySerial = SoftwareSerial(RX, TX);
-String inputString = "";
-bool stringComplete = false;
-
-int bien = 0;
-String ChuoiGuiUno = "";
 
 long last = 0;
-
-String A = "A";
-String B = "B";
 void setup()
 {
   Serial.begin(9600);
@@ -26,36 +18,19 @@ void setup()
 void loop()
 {
   Read_Uart();
-  if(millis() - last >= 3000)
+  if(millis() - last >= 1000)
   {
     Serial.println("Đã send lệnh");
-    // lấy dc lệnh từ server => data
-    mySerial.println("JK");
+    mySerial.println("Van Tho 15 ");
     last = millis();
   }
 }
 
-
-
 void Read_Uart()
 {
-  while (mySerial.available())// A279B290C315D0E\n
+  while (mySerial.available())
   {
-    char inChar = (char)mySerial.read();
-    inputString += inChar;
-    if (inChar == '\n')
-    {
-      stringComplete = true;
-    }
-    if (stringComplete)
-    {
-      Serial.print("Data nhận Uno = ");
-      Serial.println(inputString);
-      //=============
-       // xử lý và đưa lên server
-      //=============
-      inputString = "";
-      stringComplete = false;
-    }
+    String st = mySerial.readString();
+    Serial.println("Nhan : "+ st);
   }
 }
