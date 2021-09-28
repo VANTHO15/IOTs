@@ -1,0 +1,167 @@
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+extern "C" {
+#include "libb64/cdecode.h"
+}
+
+const char* ssid = "Van Tho 15";
+const char* password = "vannhucu15";
+
+const char* awsEndpoint = "a35cho9o6i7esh-ats.iot.us-east-1.amazonaws.com";
+
+
+// xxxxxxxxxx-certificate.pem.crt
+static const char certificatePemCrt[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDWjCCAkKgAwIBAgIVAJOnmv4kN6j36nNe3ar72QMh0EtQMA0GCSqGSIb3DQEB
+CwUAME0xSzBJBgNVBAsMQkFtYXpvbiBXZWIgU2VydmljZXMgTz1BbWF6b24uY29t
+IEluYy4gTD1TZWF0dGxlIFNUPVdhc2hpbmd0b24gQz1VUzAeFw0yMTA5MjgxOTQ4
+MDFaFw00OTEyMzEyMzU5NTlaMB4xHDAaBgNVBAMME0FXUyBJb1QgQ2VydGlmaWNh
+dGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCz8/kt0XH66c2BDvvP
+nw1DB0g0PxjaNfmWCr/8Oo7Jkux+zR/TKftiZFVLDC/lrL4RxKFXbl2igYyBvXwx
+85EDxqE3a4zuUZ/+VJkVXJUR6NBt2l1+P+UupSnH3sM4ASr0xSFWhUdJHv7T2ad6
+LBo8rABw/Bz8J3u601BMHNHwlmvn0OowX8oocmSUL/DTQYNpUJ3YGLrx6vlv/yGw
+GJHc5jGwLahAfK7qF4gyJXzOP5ecxwOjuFUIRvGVajsyWOyLDrN9tB5M1qoO2C3x
+H3rIAFfDGDIi/zgvCpYyZX++LY25MOo7yvh3PUiNGnAVn5G7awQ+Phn7tBId2Aya
+A6o3AgMBAAGjYDBeMB8GA1UdIwQYMBaAFEsjh9cKUG4UKbpzDaPGy/MOoQfKMB0G
+A1UdDgQWBBQ+mEAScCpVE5WMb0YVt6nYsqz31DAMBgNVHRMBAf8EAjAAMA4GA1Ud
+DwEB/wQEAwIHgDANBgkqhkiG9w0BAQsFAAOCAQEAGdiD+n2B55Av8IuJIGxqOrcH
+wnYhnQWTohsTcpfX8W5tKzi/JQFHEdOjTnRR8YqAJAjXIR6rKYMZ2vtvm1yA0lm5
+K8/Yw01KP6wX3hV7+bfzt8W0xo8+CNIioFujsx6K9DjDj59U5LqD1GexVyFSA7mz
+wGJ9dOnnGjSrLTX6m2IW1sy3UBp3zP9ioOSC2UaBNvoHJBSWJXE3cqd87y/d6tk2
+RoLlCIVdOHQj3ZifFQFSIPrAPyfCCXzKZ40uNlTaVQxQGV6vD8Hyc8V+Ja6+3+rH
+sXyK+gVCBivU09g3hLsIcc6X1KUJnjdRk/rv9GwdONSaH/UtNpBcI4qA13He6g==
+-----END CERTIFICATE-----
+)EOF";
+
+// xxxxxxxxxx-private.pem.key
+static const char privatePemKey[] PROGMEM = R"EOF(
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAs/P5LdFx+unNgQ77z58NQwdIND8Y2jX5lgq//DqOyZLsfs0f
+0yn7YmRVSwwv5ay+EcShV25dooGMgb18MfORA8ahN2uM7lGf/lSZFVyVEejQbdpd
+fj/lLqUpx97DOAEq9MUhVoVHSR7+09mneiwaPKwAcPwc/Cd7utNQTBzR8JZr59Dq
+MF/KKHJklC/w00GDaVCd2Bi68er5b/8hsBiR3OYxsC2oQHyu6heIMiV8zj+XnMcD
+o7hVCEbxlWo7Mljsiw6zfbQeTNaqDtgt8R96yABXwxgyIv84LwqWMmV/vi2NuTDq
+O8r4dz1IjRpwFZ+Ru2sEPj4Z+7QSHdgMmgOqNwIDAQABAoIBAC7FBQkke1Q0OeYG
+B+pBM0gtd1Wk5IeqKZEWgClE6uF23yJhm5jdO2mqHATiSPyPdeLWUPyRQaK/us3p
+eoLdA96QXEw0Fq/F5ShLwnGr206JTMqQS2ZJov4JjR9WRTSkEQ8GwRBkmU9mz+It
+mnqFRdho98Bltf7PIDhBPYhaoTG+5vTFyZWHROOLel+Mj621eAoUtF2NTzoXOquC
+Zw+KfzBkV+C499H+4HxloZafneY/JdJb3cvqcirMvyINsO1yl6JGvkaHIPETv24p
+5RO8nX8CVeu9LPs2bMnH6AcFXIrapVyVM5ud44LLG65vcijO93PECXCOrztsLIvw
+BNM0vOkCgYEA3QqNj0nK/OM3LUhENX/mwp4Z8OueLp+7uskq4DnxjkakR/mrqrxD
+mBA5CS1L59m78uv4qBCPnEKGeGTHuY9n8zMVbzA2HNGRj6zjAZiTxKmAliCoNF91
+e5peYHBeQLtM697rJqizxSxbbfz7k9hckJVevmgNniXDsYwTQXqgBksCgYEA0Gna
+ssJghb9EPCpvjalWP3xIHkIq6MrdoyirTm7W8KqRznaS74JosinPYGZUQtH12kOD
+4isqUEw1WE7giLafURLcmNNLi1C5xUVlgE6Zymow3ed3mbh8MeYrBJywVhQZPuTc
+JdN8NnQZaUa+b6lK/xBDO67HoAKtFwcU57DK6EUCgYEA3I44G/6kxdsuZkeSj9N0
+fULmXYetCZam6kTqPFx00+NW7t6IVU+PHr8pOifxcoHG0Sh1r7T+pwuWQ7FDvLsE
+HR4eyBhSFkViOftnc2M8JuJ/BM3HKKMLhe7NNutIkMyTf1OqTaPN5PNSs5fXq3kb
+O8VfiRwoYmIKNzGu0Qo7fKsCgYAhqheTbGZe9Eg3V7txLHssAg08Jf/8XlhytG0H
+XEwHz+WBbhHJ8kyrCqnermjJ6lRGD0XMUKCjG8w6GXOXYbhWRi+v1+GJ/V4kiVMd
+6JRa59BA59Sf1fbpsH4eXpj1LoXtbNZKneCggxxfrvev3a6piJzzlQXVyNjgsVol
+Gp+L6QKBgETMP5kgiojbcvQAk+8+EOgu1TNAT8qjYef7yJ4UOObyp2IvEuALkRU6
+fqhGWwBgrraLItI7yEP0qJBzY9CEZuz7qtkuo6s4MDnO26zUvNsD7kKFUpWoV77z
+5VrMv9GYPQYUG3N7pn26cuJkIRURGOeus6f4KrffYPA1ZClEkwlz
+-----END RSA PRIVATE KEY-----
+)EOF";
+
+// This one in here is the 'RSA 2048 bit key: Amazon Root CA 1' which is valid 
+static const char caPemCrt[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALJ4gHHKeNXj
+ca9HgFB0fW7Y14h29Jlo91ghYPl0hAEvrAIthtOgQ3pOsqTQNroBvo3bSMgHFzZM
+9O6II8c+6zf1tRn4SWiw3te5djgdYZ6k/oI2peVKVuRF4fn9tBb6dNqcmzU5L/qw
+IFAGbHrQgLKm+a/sRxmPUDgH3KKHOVj4utWp+UhnMJbulHheb4mjUcAwhmahRWa6
+VOujw5H5SNz/0egwLX0tdHA114gk957EWW67c4cX8jJGKLhD+rcdqsq08p8kDi1L
+93FcXmn/6pUCyziKrlA4b9v7LWIbxcceVOF34GfID5yHI9Y/QCB/IIDEgEw+OyQm
+jgSubJrIqg0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0OBBYEFIQYzIU07LwMlJQuCFmcx7IQTgoIMA0GCSqGSIb3DQEBCwUA
+A4IBAQCY8jdaQZChGsV2USggNiMOruYou6r4lK5IpDB/G/wkjUu0yKGX9rbxenDI
+U5PMCCjjmCXPI6T53iHTfIUJrU6adTrCC2qJeHZERxhlbI1Bjjt/msv0tadQ1wUs
+N+gDS63pYaACbvXy8MWy7Vu33PqUXHeeE6V/Uq2V8viTO96LXFvKWlJbYK8U90vv
+o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
+5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
+rqXRfboQnoZsG4q5WTP468SQvvG5
+-----END CERTIFICATE-----
+)EOF";
+
+BearSSL::X509List client_crt(certificatePemCrt);
+BearSSL::PrivateKey client_key(privatePemKey);
+BearSSL::X509List rootCert(caPemCrt);
+
+WiFiClientSecure wiFiClient;
+void msgReceived(char* topic, byte* payload, unsigned int len);
+PubSubClient pubSubClient(awsEndpoint, 8883, msgReceived, wiFiClient); 
+
+void setup() {
+  Serial.begin(115200); Serial.println();
+  Serial.println("ESP8266 AWS IoT Example");
+
+  Serial.print("Connecting to "); Serial.print(ssid);
+  WiFi.begin(ssid, password);
+  WiFi.waitForConnectResult();
+  Serial.print(", WiFi connected, IP address: "); 
+  Serial.println(WiFi.localIP());
+  
+  setCurrentTime();
+
+  wiFiClient.setClientRSACert(&client_crt, &client_key);
+  wiFiClient.setTrustAnchors(&rootCert);
+}
+
+unsigned long lastPublish;
+int msgCount;
+
+void loop() {
+
+  pubSubCheckConnect();
+
+  if (millis() - lastPublish > 10000) {
+    String msg = String("Hello from ESP8266: ") + ++msgCount;
+    pubSubClient.publish("outTopic", msg.c_str());
+    Serial.print("Published: "); Serial.println(msg);
+    lastPublish = millis();
+  }
+}
+
+void msgReceived(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message received on "); Serial.print(topic); Serial.print(": ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+void pubSubCheckConnect() {
+  if ( ! pubSubClient.connected()) {
+    Serial.print("PubSubClient connecting to: "); Serial.print(awsEndpoint);
+    while ( ! pubSubClient.connected()) {
+      Serial.print(".");
+      pubSubClient.connect("ESPthing");
+    }
+    Serial.println(" connected");
+    pubSubClient.subscribe("inTopic");
+  }
+  pubSubClient.loop();
+}
+
+void setCurrentTime() {
+  configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+
+  Serial.print("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+  }
+  Serial.println("");
+  struct tm timeinfo;
+  gmtime_r(&now, &timeinfo);
+  Serial.print("Current time: "); Serial.print(asctime(&timeinfo));
+}
